@@ -39,4 +39,22 @@ app.use(
   })
 );
 
+
+// app.get("/heathcheck") -> we can use this beginner method to return health status and all 
+
+// for professional approach -> we write first thing in healthCheck controller -> basically a healthcheck file in the controllers 
+
+
+// import routes now 
+import healthcheckRouter from "./routes/healthcheck.routes.js"
+
+//routes
+
+app.use("/api/v1/healthcheck", healthcheckRouter) // when someone hits up this route , the healthCheckROuter will take control of it and we dont have to serve something specific on our own 
+
+
+
+
+
+
 export { app };
