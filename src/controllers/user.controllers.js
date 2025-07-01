@@ -227,7 +227,9 @@ const loginUser = asyncHandler(async (req, res) => {
 const logoutUser = asyncHandler(async (req, res) => {
   // MAIN part is to grab the user id and remove the refreshToken from it ----------
 
-  await User.findByIdAndUpdate(req.user._id); // but we dont have a way to find who is the logged in user so we kinda going to use the middleware here to know who the user actually is and we grab the user id and update the refreshToken field by removing it "" ez pz
+  // await User.findByIdAndUpdate(req.user._id); // but we dont have a way to find who is the logged in user so we kinda going to use the middleware here to know who the user actually is and we grab the user id and update the refreshToken field by removing it "" ez pz
+
+  await User.findByIdAndUpdate(req.user._id);
 });
 
 //Refresh Access Token functionality
