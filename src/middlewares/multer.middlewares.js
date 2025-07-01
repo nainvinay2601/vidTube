@@ -1,4 +1,5 @@
 import multer from "multer";
+import path from "path";
 
 /*
 
@@ -23,6 +24,5 @@ const storage = multer.diskStorage({
 export const upload = multer({
   storage, // storage:storage
 });
-
 
 // using all this we can take the file from the user and now we want to upload this file to the cloudinary -> we will do this by using utility function "cloudinary.js"

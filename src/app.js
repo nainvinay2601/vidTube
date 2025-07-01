@@ -1,4 +1,6 @@
 import express, { urlencoded } from "express";
+import { errorHandler } from "./middlewares/error.middlewares.js";
+
 import cookieParser from "cookie-parser";
 import logger from "./logger.js";
 import morgan from "morgan";
@@ -42,17 +44,24 @@ app.use(
 
 //Cookie parser for session
 
-app.use(cookieParser);
+app.use(cookieParser());
 
 // app.get("/heathcheck") -> we can use this beginner method to return health status and all
 
 // for professional approach -> we write first thing in healthCheck controller -> basically a healthcheck file in the controllers
 
-// import routes now
+// ===================== IMPORTED ROUTES =======================
 import healthcheckRouter from "./routes/healthcheck.routes.js";
+import userRouter from "./routes/user.routes.js";
 
 //routes
 
 app.use("/api/v1/healthcheck", healthcheckRouter); // when someone hits up this route , the healthCheckROuter will take control of it and we dont have to serve something specific on our own
+app.use("/api/v1/users", userRouter); // someones goes on this route -> userRouter will take control and based on the request of the user the user controller will take the action
+
+// for example user is going for registeration
+// /api/v1/users/register -> this route will hit the registerUser function in the user.controller which will be handling the logic of the user registeration basicallt
+
+app.use(errorHandler);
 
 export { app };
