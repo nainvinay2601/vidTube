@@ -62,6 +62,6 @@ app.use("/api/v1/users", userRouter); // someones goes on this route -> userRout
 // for example user is going for registeration
 // /api/v1/users/register -> this route will hit the registerUser function in the user.controller which will be handling the logic of the user registeration basicallt
 
-app.use(errorHandler);
+// app.use(errorHandler);
 
 export { app };

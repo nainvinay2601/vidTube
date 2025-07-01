@@ -3,6 +3,10 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs"; //101 node
 
+import dotenv from "dotenv"
+
+dotenv.config()
+
 //Configure Cloudinary
 
 // Configuration
@@ -17,18 +21,25 @@ const uploadOnCloudinary = async (localFilePath) => {
   try {
     //1 -if no path we dont wanna proceed
 
+    console.log("Cloudinary Config:", {
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+
     if (!localFilePath) return null;
 
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
     });
 
-    console.log("FILE UPLOADED ON CLOUDINARY. FILE SRC:  " +  response.url)
+    console.log("FILE UPLOADED ON CLOUDINARY. FILE SRC:  " + response.url);
 
-    //once file is uploaded we will delete it from our localDiskStorage where multer saved it 
-    fs.unlinkSync(localFilePath); 
-    return response; // can use this for video and different types as video gives us time and all 
+    //once file is uploaded we will delete it from our localDiskStorage where multer saved it
+    fs.unlinkSync(localFilePath);
+    return response; // can use this for video and different types as video gives us time and all
   } catch (error) {
+    console.log("Error On Cloudinary", error);
     fs.unlinkSync(localFilePath);
     return null;
   }

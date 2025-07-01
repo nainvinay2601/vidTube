@@ -21,7 +21,7 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
-    fullname: {
+    fullName: {
       type: String,
       required: true,
       trim: true,
@@ -59,7 +59,7 @@ userSchema.pre("save", async function (next) {
   // this has access to all the info of the userSchema
   // this.passowrd means user's given password
 
-  if (!this.modified("password")) return next();  // this means if the password field is not being modified then just simply return and go to next middleware or end poitn  and for the first time we are saving it for the first time not modifying 
+  if (!this.isModified("password")) return next();  // this means if the password field is not being modified then just simply return and go to next middleware or end poitn  and for the first time we are saving it for the first time not modifying 
   this.password = bcrypt.hash(this.password, 10);
 
   next();
