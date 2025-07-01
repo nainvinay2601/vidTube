@@ -229,7 +229,30 @@ const logoutUser = asyncHandler(async (req, res) => {
 
   // await User.findByIdAndUpdate(req.user._id); // but we dont have a way to find who is the logged in user so we kinda going to use the middleware here to know who the user actually is and we grab the user id and update the refreshToken field by removing it "" ez pz
 
-  await User.findByIdAndUpdate(req.user._id);
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        // refreshToken: "",// good but undefined is better approach
+        refreshToken: undefined,
+      },
+    },
+    {
+      // gives the new information fresh info instead of prev one
+      new: true,
+    }
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User Logged Out Successfully"));
 });
 
 //Refresh Access Token functionality
@@ -294,4 +317,4 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser, refreshAccessToken };
+export { registerUser, loginUser, refreshAccessToken, logoutUser };

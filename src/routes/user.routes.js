@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { registerUser } from "../controllers/user.controllers.js";
+import { registerUser, logoutUser } from "../controllers/user.controllers.js";
 import { upload } from "../middlewares/multer.middlewares.js";
+import { verifyJWT } from "../middlewares/auth.middlewares.js";
 
 const router = Router();
 
@@ -20,5 +21,13 @@ router.route("/register").post(
   ]),
   registerUser
 );
+
+//secured routes
+
+// router.route("/logout").post(logoutUser) -> this is not secured route as we still have to do the process using the middleware yet so we inject the middleware here
+
+router.route("/logout").post(verifyJWT, logoutUser);
+
+// the next we defined at the end of verifyJWT will transfer the control from the verifyJWT to endpoint which is our logoutUser controller 
 
 export default router;
