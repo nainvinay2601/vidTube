@@ -21,7 +21,7 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
-    fullName: {
+    fullname: {
       type: String,
       required: true,
       trim: true,
@@ -43,7 +43,7 @@ const userSchema = new Schema(
       type: String, // encrypted string that we will save after using the middleware and use the bcrypt to salt it
       required: [true, "Password Is Required :("],
     },
-    refreshTOken: {
+    refreshToken: {
       type: String,
     },
   },
