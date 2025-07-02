@@ -8,6 +8,7 @@ import {
 
 import { User } from "../models/user.models.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 //helper function (didnt save it in util folder as we just need this helper function here only)
 const generateAccessAndRefreshToken = async (userId) => {
@@ -343,7 +344,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 });
 
 //Get current user -> user already stored in the request all thanks to auth middleware
-const currentUser = asyncHandler(async (req, res) => {
+const getCurrentUser = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, req.user, "Current User Details"));
 });
 
@@ -452,9 +453,155 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, user, "Cover Image updated"));
 });
 
+//Get user profile channel -> how many people have subscribed you or how many you have subscribed how many tweets you have done this and that
 
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  //Step -1 -> get something from req.params
+  const { username } = req.params;
+  //validate
+  if (!username?.trim()) {
+    throw new ApiError(404, "Username is required");
+  }
 
+  //now use this username to enquire from db
+  const channel = await User.aggregate([
+    {
+      //Pipeline one
+      $match: {
+        //match based on field -> filter the database based on this username and find the user
+        username: username?.toLowerCase().trim(),
+      },
+    },
+    {
+      //the match we found will be used here now
+      // next agreegation thing we gonna use is the lookup method to look for collection of the username
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        // all the channels that have my ID are my subscriber only so we are finding the channels here
+        foreignField: "channel",
+        as: "subscribers", // all my subscribers
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber", // all the channels where I have subscribed to
+        as: "subscribedTo",
+      },
+    },
+    {
+      // add our fields now
+      $addFields: {
+        subscribersCount: {
+          $size: "$subscriber", // use $ sign when you actually named something
+        },
+        channelsSubscribedToCount: {
+          $size: "$subscribedTo",
+        },
+        isSubscribed: {
+          $cond: {
+            if: {
+              // in our lookup do any subscriber has our id means he is logged in or nit
+              $in: [req.user?._id, "$subscribers.subscriber"],
+            },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      //projection of necessary data
+      $project: {
+        fullname: 1,
+        avatar: 1,
+        subscribersCount: 1,
+        channelsSubscribedToCount: 1,
+        isSubscribed: 1,
+        coverImage: 1,
+        email: 1,
+      },
+    },
+  ]);
 
+  //validate channel
+  if (!channel?.length) {
+    throw new ApiError(404, "No Channel Found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        channel[0],
+        "Channel profile fetched successfully :)"
+      )
+    );
+});
+//Get user watch history
+const getWatchHistory = asyncHandler(async (req, res) => {
+  //get user from params or directly from request both gonna give user only
+
+  const user = await User.aggregate([
+    {
+      $match: {
+        // _id:req.user?._id this dont work in the aggregate like that, here we have to give mongoose defined id like this
+        _id: new mongoose.Types.ObjectId(req.user?._id),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchedHistory", // saving the watchHistory as watchHistory in our db
+        pipeline: [
+          {
+            $lookup: {
+              // we are doing lookup now as when we are in this "videos" model we want to know some details about the video like we also want to get the videoFile, the creator of the video and all such info
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner", // saving the owner of the video as owner
+              // now we have grabbed the user based on the foreign id which is id now we have option to project all the data of the owner like fullname, password refreshtoken all the thing but we just want to show/project a few specific things only
+              pipeline: [
+                {
+                  $project: {
+                    fullname: 1,
+                    username: 1,
+                    avatar: 1,
+
+                    // now videos will only have access to these fields of user
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner",
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user[0]?.watchHistory,
+        "Watch History fetched successfully"
+      )
+    );
+});
 
 export {
   registerUser,
@@ -462,8 +609,10 @@ export {
   refreshAccessToken,
   logoutUser,
   changeCurrentPassword,
-  currentUser,
+  getCurrentUser,
   updateAccountDetails,
   updateUserAvatar,
   updateUserCoverImage,
+  getUserChannelProfile,
+  getWatchHistory,
 };
