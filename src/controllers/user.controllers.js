@@ -317,4 +317,153 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser, refreshAccessToken, logoutUser };
+//Change the password
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  //Steps-> grab old password and new password
+  const { oldPassword, newPassword } = req.body;
+  const user = await User.findById(req.user?._id);
+  if (!user) {
+    throw new ApiError(404, "No User found");
+  }
+
+  const isPasswordValid = await user.isPasswordCorrect(oldPassword);
+
+  if (!isPasswordValid) {
+    throw new ApiError(404, "Old Password is incorrect ");
+  }
+
+  // old password was correct so update the user password with the bew pasword
+  user.password = newPassword; // as we have already used the prehook of mongoose in the user model when the password is modified it will be hashed first and saved in the db
+
+  await User.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password Changed Successfully :)"));
+});
+
+//Get current user -> user already stored in the request all thanks to auth middleware
+const currentUser = asyncHandler(async (req, res) => {
+  res.status(200).json(new ApiResponse(200, req.user, "Current User Details"));
+});
+
+//update account details
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  //what kind of data we are allowing user to edit like if we are allowing user to update email or not like that
+  const { fullname, email } = req.body;
+  //validate
+  if (!fullname || !email) {
+    throw new ApiError(404, "Fullname and email are required to change em:(");
+  }
+  // Validation done now we want to find the id and update the fullname or email whatever user want to update
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        fullname: fullname,
+        email: email,
+      },
+    },
+    {
+      new: true,
+    }
+  ).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, user, "Account Details updated successfully :))")
+    );
+});
+
+//Update User avatar
+const updateUserAvatar = asyncHandler(async (req, res) => {
+  //Grab Images
+  //access local file path by using.files method that multer help us to set
+
+  const avatarLocalPath = req.file?.path;
+  //Validate
+  if (!avatarLocalPath) {
+    throw new ApiError(404, "Avatar File is required");
+  }
+
+  //upload on cloudinary
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+  //response will be send using the url as we mentuoned in the utils of cloudinary
+
+  //validate the url
+  if (!avatar.url) {
+    throw new ApiError(500, "Error while uploading the avatar  :((");
+  }
+
+  //validated now again find by id and update and return
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        avatar: avatar.url,
+      },
+    },
+    {
+      new: true,
+    }
+  ).select("-password -refreshToken");
+
+  res.status(200).json(new ApiResponse(200, user, "Avatar updated"));
+});
+//update cover image
+const updateUserCoverImage = asyncHandler(async (req, res) => {
+  //Grab Images
+  //access local file path by using.files method that multer help us to set
+
+  const coverLocalPath = req.file?.path;
+  //Validate
+  if (!coverLocalPath) {
+    throw new ApiError(404, "Cover File is required");
+  }
+
+  //upload on cloudinary
+  const coverImage = await uploadOnCloudinary(coverLocalPath);
+
+  //response will be send using the url as we mentuoned in the utils of cloudinary
+
+  //validate the url
+  if (!coverImage.url) {
+    throw new ApiError(500, "Error while uploading the cover Image  :((");
+  }
+
+  //validated now again find by id and update and return
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        coverImage: coverImage.url,
+      },
+    },
+    {
+      new: true,
+    }
+  ).select("-password -refreshToken");
+
+  res.status(200).json(new ApiResponse(200, user, "Cover Image updated"));
+});
+
+
+
+
+
+export {
+  registerUser,
+  loginUser,
+  refreshAccessToken,
+  logoutUser,
+  changeCurrentPassword,
+  currentUser,
+  updateAccountDetails,
+  updateUserAvatar,
+  updateUserCoverImage,
+};
